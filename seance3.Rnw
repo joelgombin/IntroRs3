@@ -1,0 +1,395 @@
+\documentclass[slidetop, 10pt]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{default}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{lmodern}
+\usepackage[frenchb]{babel}
+\usetheme{Antibes}
+
+\usecolortheme{beaver}
+\title{Séminaire d'introduction à R}
+\subtitle{séance 3 - Statistique descriptive}
+\author{Joël Gombin}
+\institute{CURAPP - UPJV}
+\date{24 février 2012}
+\usepackage{graphicx}
+\usepackage[fixlanguage]{babelbib}
+\selectbiblanguage{french}
+\setbeamertemplate{navigation symbols}{}
+\usepackage{listings}
+
+\usepackage{color}
+\usepackage{alltt}
+\usepackage{hyperref}
+
+ 
+
+\AtBeginSection[] 
+{ 
+  \begin{frame}[plain]{Plan} 
+    \tableofcontents[currentsection, hideothersubsections] 
+  \end{frame} 
+} 
+
+ \SweaveOpts{fig.align=center}
+
+\begin{document}
+\frame{\titlepage}
+
+\begin{frame}
+ \frametitle{Plan de la séance}
+ \tableofcontents[pausesections]
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+ \frametitle{Introduction}
+
+Les statistiques descriptives concernent les méthodes permettant de décrire, de diverses manières, les données qu'on étudie. 
+
+Dans une large mesure, la commande \verb!summary()! fournit l'essentiel de la statistique descriptive...
+
+L'information peut être résumée numériquement mais aussi graphiquement. 
+
+
+\end{frame}
+
+\section{Analyser une variable}
+
+\begin{frame}
+ \frametitle{Analyser une variable}
+
+
+<<initialisation, include=FALSE, echo=FALSE>>=
+load("/media/Data/Dropbox/Thèse/séminaire R/séance 1/mini_picardie.Rdata")
+
+@
+
+Analyser une seule variable peut sembler trivial, mais permet en fait souvent de découvrir beaucoup de choses sur nos données. 
+
+Les méthodes de résumé de l'information varient selon le type de variable.
+
+\end{frame}
+
+
+\subsection{Analyser une variable quantitative continue}
+\subsubsection{Tendances centrales}
+\begin{frame}[fragile]
+ \frametitle{Tendances centrales}
+
+On cherche ici à résumer une variable par une seule valeur, en s'intéressant plutôt à ce qui est commun qu'à ce qui diffère entre les observations. (Voir aussi \verb!weighted.mean!)
+
+<<moyenne-mediane>>=
+mean(mini_picardie$abstentionspci95)
+
+mean(mini_picardie$abstentionspci95, trim=0.1, na.rm=TRUE)
+
+median(mini_picardie$abstentionspci95, na.rm = TRUE)
+@
+
+ 
+\end{frame}
+
+\subsubsection{Dispersion}
+\begin{frame}[fragile]
+ \frametitle{Dispersion}
+
+On s'intéresse plutôt ici aux variations au sein des observations.
+
+<<dispersion>>=
+range(mini_picardie$abstentionspci95, na.rm=TRUE)
+
+quantile(mini_picardie$abstentionspci95, probs=seq(0,1,0.25), na.rm = TRUE)
+
+sd(mini_picardie$abstentionspci95, na.rm = TRUE)
+@
+
+
+\end{frame}
+
+\subsubsection{Représentations graphiques}
+\begin{frame}[fragile]
+ \frametitle{L'histogramme}
+
+
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=.45\linewidth, tidy=FALSE>>=
+require(ggplot2)
+m <- ggplot(mini_picardie, aes(x=abstentionspci95))
+m + geom_histogram(binwidth = 1) + scale_x_continuous("Abstention en %") + scale_y_continuous("Fréquence")
+@
+
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{La courbe de densité}
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=0.45\linewidth, tidy=FALSE>>=
+m <- ggplot(mini_picardie, aes(x=abstentionspci95))
+m + geom_density() + scale_x_continuous("Abstention en %") + scale_y_continuous("Fréquence")
+@
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{On peut cumuler les deux...}
+
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=0.45\linewidth, tidy=FALSE>>=
+
+m + geom_histogram(aes(y=..density..), binwidth=1) + geom_density() + scale_x_continuous("Abstention en %") + scale_y_continuous("Fréquence")
+
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Représenter les points et leur dispersion}
+
+<<dev=pdf, fig=FALSE, message=FALSE, out.width=0.45\linewidth, tidy=FALSE>>=
+qplot(x=factor(0), y=abstentionspci95, data=mini_picardie, geom="boxplot", xlab="", ylab="Abstention 1995", outlier.colour="red") + coord_flip() + geom_jitter(alpha=0.2)
+@
+
+\begin{columns}[c]
+\begin{column}{0.40\textwidth}
+<<dev=pdf, echo=FALSE,fig=TRUE, fig.align=left, message=FALSE, out.width=1\linewidth, tidy=FALSE>>=
+qplot(x=factor(0), y=abstentionspci95, data=mini_picardie, geom="boxplot", xlab="", ylab="Abstention 1995", outlier.colour="red") + coord_flip() + geom_jitter(alpha=0.2)
+@
+\end{column}
+\begin{column}{0.40\textwidth}
+Les mesures représentées sont la médiane, les 1er et 3ème quartiles, et les lignes représentent 1,5 fois l'écart interquartile. La commande \verb!boxplot! permet de contrôler ce paramètre.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Représenter les points et leur dispersion}
+Le graphe en violon combine un boxplot et un histogramme plus ou moins lissé.
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=0.45\linewidth, tidy=FALSE>>=
+require(wvioplot)
+wvioplot(mini_picardie$abstentionspci95, adjust=1)
+
+@
+\end{frame}
+
+\subsection{Analyser une variable ordinale}
+
+\begin{frame}[fragile]
+ \frametitle{Analyser une variable ordinale}
+
+Pour une variable ordinale (exemple : échelles d'attitude), on utilisera essentiellement la médiane et la distance interquartile. 
+La représentation graphique passe par un \verb!barplot! :
+
+\begin{columns}[c]
+\begin{column}{0.40\textwidth}
+
+<<dev=pdf, message=FALSE, out.width=0.45\linewidth, tidy=FALSE>>=
+a <- c(1,2,1,1,2,3)
+qplot(a, geom="bar")
+@ 
+
+\end{column}
+
+\begin{column}{0.40\textwidth}
+
+<<dev=pdf, echo=FALSE, fig=TRUE, message=FALSE, out.width=1\linewidth, tidy=FALSE>>=
+a <- c(1,2,1,1,2,3)
+qplot(a, geom="bar")
+@ 
+
+\end{column}
+\end{columns}
+
+
+\end{frame}
+
+
+\subsection{Analyser une variable qualitative}
+\begin{frame}[fragile]
+ \frametitle{Analyser une variable qualitative}
+
+Le résumé de l'information qu'on peut obtenir est assez pauvre : mode (classe la plus nombreuse) et tri à plat.
+\begin{columns}[c]
+\begin{column}{0.45\textwidth}
+
+<<>>=
+require(prettyR)
+a <- as.factor(c("A","B","A","A","B","C"))
+Mode(a)
+table(a)
+
+@ 
+
+\end{column}
+
+\begin{column}{0.45\textwidth}
+
+<<echo=FALSE, tidy=FALSE, results=asis>>=
+require(tables)
+latex(tabular((n=1)~(a +1), data=c))
+@
+
+<<>>=
+require(rgrs)
+cprop(table(a), percent=T)
+@
+
+\end{column}
+
+\end{columns}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Analyser une variable qualitative}
+Le résumé graphique sera un barplot ou un camembert.
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=1\linewidth>>=
+qplot(a, geom="bar")
+@ 
+\end{column}
+\begin{column}{0.48\textwidth}
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=0.6\linewidth>>=
+c <- as.data.frame(a)
+ggplot(data=c, aes(x=as.factor(1), fill=as.factor(a)))+geom_bar(width=1, xlab="", ylab="")+coord_polar(theta="y")
+@
+\end{column}
+ 
+\end{columns}
+
+\end{frame}
+
+\section{Analyser deux variables}
+
+\subsection{Analyser deux variables quantitatives}
+
+\begin{frame}[shrink=5, fragile]
+ \frametitle{Comparer deux variables quantitatives}
+
+On peut largement réutiliser les outils (numériques et graphiques) précédents. 
+
+Pour savoir dans quelle mesure deux moyennes sont différentes de manière significative, on utilise le test de Student (\emph{t-test}).
+
+<<>>=
+t.test(mini_picardie$abstentionspci95, mini_picardie$AbsIns)
+@
+
+\end{frame}
+
+\begin{frame}[shrink=5,fragile]
+\frametitle{Mesurer la relation entre deux variables}
+On utilise le coefficient de corrélation de Bravais-Pearson \emph{R}. 
+
+<<>>=
+cor.test(mini_picardie$abstentionspci95[-1699], mini_picardie$AbsIns[-1699])
+@
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualiser la relation entre deux variables} 
+On représente le nuage de points
+
+<<dev=pdf, fig=TRUE, message=FALSE, out.width=0.45\textwidth, tidy=FALSE>>=
+
+qplot(abstentionspci95, AbsIns, data=mini_picardie[-1699,], alpha=I(0.3)) + geom_smooth(method="lm")
+
+@
+
+\end{frame}
+
+
+\subsection{Analyser deux variables ordinales}
+
+\begin{frame}[shrink=5,fragile]
+ \frametitle{Analyser deux variables ordinales}
+
+La mesure numérique de la relation entre deux variables ordinales (deux échelles d'attitude, par exemple) se fait généralement au moyen du coefficient de corrélation de Spearman.
+
+<<>>=
+
+a <- c(1,2,1,1,1,2,3)
+b <- c(10,15,9,7,10,18,25)
+cor.test(a,b, method="spearman")
+
+@ 
+
+\end{frame}
+
+
+\subsection{Analyser deux variables qualitatives}
+
+\begin{frame}[fragile, shrink=5]
+\frametitle{Analyser deux variables qualitatives}
+On utilise le tableau croisé et le \chi^2.
+
+<<>>=
+
+mini_picardie$codedpt <- factor(mini_picardie$codedpt)
+table(mini_picardie$codedpt, mini_picardie$type_urbain)
+chisq.test(table(mini_picardie$codedpt, mini_picardie$type_urbain))
+
+@
+ 
+\end{frame}
+
+\subsection{Analyser une variable quantitative et une variable qualitative}
+
+\begin{frame}[fragile, shrink=5]
+ \frametitle{Analyser numériquement une variable quantitative et une variable qualitative}
+
+On commence par faire un tri à plat :
+
+<<>>=
+
+tapply(mini_picardie$abstentionspci95, mini_picardie$type_urbain, mean)
+tapply(mini_picardie$abstentionspci95, mini_picardie$type_urbain, sd)
+
+@
+
+
+\end{frame}
+
+\begin{frame}[fragile, shrink=5]
+ \frametitle{Analyser numériquement une variable quantitative et une variable qualitative}
+
+On peut ensuite faire une analyse de variance (ANOVA) :
+
+<<>>=
+
+anova(lm(abstentionspci95 ~ type_urbain, data=mini_picardie))
+
+@
+
+
+\end{frame}
+
+\begin{frame}[fragile, shrink=5]
+ \frametitle{Analyser graphiquement une variable quantitative et une variable qualitative}
+
+Le plus indiqué semble de comparer les boxplots :
+
+<<dev=pdf, fig=TRUE, out.width=0.50\textwidth>>=
+
+boxplot(abstentionspci95 ~ type_urbain, data=mini_picardie)
+@
+
+
+\end{frame}
+
+
+\section*{Ressources complémentaires}
+
+\begin{frame}
+ \frametitle{Quelques ressources complémentaires}
+
+Le plus utile ici est sans doute le travail de Julien Barnier, \href{http://alea.fr.eu.org/pages/intro-R}{\emph{R pour les sociologues (et assimilés)}}, qui accompagne son package \verb!rgrs!.
+
+
+On trouvera par ailleurs en ligne de très nombreuses ressources concernant l'utilisation de R pour la statistique descriptive.
+
+\end{frame}
+
+
+\end{document}
+
